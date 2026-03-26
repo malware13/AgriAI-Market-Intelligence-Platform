@@ -1,26 +1,11 @@
-"""
-AgriAI – Market Intelligence Platform (Streamlit version)
-=========================================================
-Run with:
-    pip install streamlit anthropic plotly python-dotenv
-    streamlit run agriai_streamlit.py
-
-Set ANTHROPIC_API_KEY in a .env file or export it as an environment variable.
-"""
-
-import os
 import json
 import random
-import threading
 import time
 from datetime import datetime, timedelta
 
 import streamlit as st
 import plotly.graph_objects as go
-from dotenv import load_dotenv
 import anthropic
-
-load_dotenv()
 
 # ─────────────────────────────────────────────────────────────
 #  Page config  (must be first Streamlit call)
@@ -96,9 +81,10 @@ h1, h2, h3 { color: #e6edf3; }
 # ─────────────────────────────────────────────────────────────
 @st.cache_resource
 def get_client():
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
-        st.error("⚠️ ANTHROPIC_API_KEY not found. Add it to your .env file.")
+    try:
+        api_key = st.secrets["ANTHROPIC_API_KEY"]
+    except KeyError:
+        st.error("⚠️ ANTHROPIC_API_KEY not found. Add it to your Streamlit Cloud Secrets.")
         st.stop()
     return anthropic.Anthropic(api_key=api_key)
 
@@ -230,7 +216,6 @@ def render_price_table(data: dict, category: str):
     for name, info in data.items():
         pct = (info["current"] - info["min"]) / (info["max"] - info["min"]) * 100
         trend = "▲" if pct > 60 else ("▼" if pct < 40 else "–")
-        color = "#23d18b" if pct > 60 else ("#f85149" if pct < 40 else "#f0a500")
         rows.append({
             "Commodity": name,
             "Price (₱)": f"₱{info['current']:,.2f}",
